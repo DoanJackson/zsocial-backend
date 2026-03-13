@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:15-alpine 
     container_name: zsocial_db
     restart: always
     environment:
@@ -12,7 +12,7 @@ services:
     ports:
       - "5438:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     deploy:
       resources:
         limits:
