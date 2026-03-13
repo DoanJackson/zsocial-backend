@@ -1,0 +1,25 @@
+package com.example.zsocial.backend.media.service;
+
+import com.example.zsocial.backend.infrastructure.filestorage.dto.UploadFileResult;
+import com.example.zsocial.backend.media.model.Media;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+
+public interface MediaService {
+
+    //    upload nhieu file len cloud storage theo danh sach MultipartFile, thuc hien dong bo theo co che parallel
+    List<UploadFileResult> uploadFilesParallel(List<MultipartFile> files, String destinationPath);
+
+    // upload 1 file len cloud storage
+    UploadFileResult uploadFile(MultipartFile file, String destinationPath);
+
+    //    xoa file tren cloud storage theo danh sach publicUrl, thuc hien bat dong bo
+    void cleanupFilesAsync(List<String> filesToDelete);
+
+    //    dung de xu ly cap nhat media cho entity (review, post, etc) trong db, tra ve danh sach publicUrl can xoa tren cloud storage
+    List<String> processMediaUpdate(List<Media> currentMedias, List<Long> keptMediaIds, List<UploadFileResult> newFiles);
+
+    Map<Long, List<Media>> groupMediaByParentId(List<Object[]> rawData);
+}

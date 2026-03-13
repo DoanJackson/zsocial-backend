@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:latest
+    container_name: zsocial_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zsocial
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+  # RabbitMQ Service (Thêm mới)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: zsocial_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Port mặc định của RabbitMQ (AMQP)
+      - "15672:15672" # Port trang quản trị (Management UI)
+      - "61613:61613" # Port STOMP (Cực kỳ quan trọng cho Chat WebSocket)
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    command: >
+      bash -c "rabbitmq-plugins enable --offline rabbitmq_management rabbitmq_stomp && rabbitmq-server"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # Lưu dữ liệu để không mất queue khi restart
+      # - rabbitmq_config:/etc/rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+
+  backend:
+    build: .
+    container_name: zsocial_be
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - rabbitmq
+    env_file:
+      - .env
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/zsocial?stringtype=unspecified
+      RABBITMQ_HOST: rabbitmq
+      GCS_CREDENTIALS_PATH: /app/gcs-key.json
+      JAVA_OPTS: "-Xmx400m -Xms256m"
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+#  redis-cache:
+#    image: redis:alpine
+#    container_name: redis-cache
+#    ports:
+#      - "6379:6379"
+#    command: >
+#      redis-server
+#      --save ""
+#      --appendonly no
+#      --maxmemory 512mb
+#      --maxmemory-policy allkeys-lru
+#    restart: always
+#    networks:
+#      - redis-net
+
+#networks:
+#  redis-net:
+#    driver: bridge
