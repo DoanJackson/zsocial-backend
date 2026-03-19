@@ -1,6 +1,7 @@
 package com.example.zsocial.backend.notification.service.impl;
 
 import com.example.zsocial.backend.chat.dto.response.ConversationSocketResponse;
+import com.example.zsocial.backend.chat.dto.response.MessageRecalledPayload;
 import com.example.zsocial.backend.chat.dto.response.MessageResponse;
 import com.example.zsocial.backend.chat.service.ChatService;
 import com.example.zsocial.backend.common.dto.SocketEvent;
@@ -55,5 +56,15 @@ public class NotificationServiceImpl implements NotificationService {
             // }
             socketService.sendToTopic("/topic/user." + memberId, alertEvent);
         }
+    }
+
+    @Override
+    public void handleMessageRecalledNotification(MessageRecalledPayload payload) {
+        String chatTopic = "/topic/conversation." + payload.getConversationId();
+        SocketEvent<MessageRecalledPayload> chatEvent = SocketEvent.<MessageRecalledPayload>builder()
+                .type(SocketEventType.MESSAGE_RECALLED)
+                .payload(payload)
+                .build();
+        socketService.sendToTopic(chatTopic, chatEvent);
     }
 }

@@ -38,6 +38,12 @@ public class ChatController {
         return BaseResponse.success(response, ResultCode.SUCCESS, "Conversations fetched successfully");
     }
 
+    @DeleteMapping("/conversations/{conversationId}/clear")
+    public ResponseEntity<BaseResponse<Void>> clearConversation(@PathVariable Long conversationId) {
+        chatService.clearConversation(conversationId);
+        return BaseResponse.success(null, ResultCode.SUCCESS, "Conversation cleared successfully");
+    }
+
     @GetMapping("/conversations/{conversationId}/members")
     public ResponseEntity<BaseResponse<ConversationMembersResponse>> getConversationById(@PathVariable Long conversationId) {
         ConversationMembersResponse response = chatService.getConversationMembers(conversationId);
@@ -53,6 +59,12 @@ public class ChatController {
                 .build();
         CursorResponse<MessageResponse> response = chatService.getMessageConversation(request);
         return BaseResponse.success(response, ResultCode.SUCCESS, "Message fetched successfully");
+    }
+
+    @DeleteMapping("/messages/{messageId}")
+    public ResponseEntity<BaseResponse<Void>> deleteMessage(@PathVariable Long messageId) {
+        chatService.deleteMessage(messageId);
+        return BaseResponse.success(null, ResultCode.SUCCESS, "Message deleted successfully");
     }
 
 }

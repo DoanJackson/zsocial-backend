@@ -1,6 +1,7 @@
 package com.example.zsocial.backend.chat.model;
 
 import com.example.zsocial.backend.chat.model.enums.ConversationRole;
+import com.example.zsocial.backend.common.utils.DateTimesUtils;
 import com.example.zsocial.backend.users.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,4 +44,11 @@ public class ConversationMember {
     @CreatedDate
     @Column(name = "joined_at", updatable = false)
     private LocalDateTime joinedAt;
+
+    @Column(name = "cleared_at", nullable = true)
+    private LocalDateTime clearedAt;
+
+    public LocalDateTime getEffectiveClearedAt() {
+        return clearedAt == null ? DateTimesUtils.MIN_EPOCH_TIME : clearedAt;
+    }
 }

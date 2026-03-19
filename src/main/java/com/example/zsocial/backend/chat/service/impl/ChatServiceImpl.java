@@ -4,6 +4,7 @@ import com.example.zsocial.backend.chat.dto.request.ChatRequest;
 import com.example.zsocial.backend.chat.dto.request.ConversationLoadRequest;
 import com.example.zsocial.backend.chat.dto.request.MessageLoadRequest;
 import com.example.zsocial.backend.chat.dto.response.*;
+import com.example.zsocial.backend.chat.event.MessageRecalledEvent;
 import com.example.zsocial.backend.chat.event.MessageSaveEvent;
 import com.example.zsocial.backend.chat.mapper.ConversationMapper;
 import com.example.zsocial.backend.chat.mapper.ConversationMemberMapper;
@@ -22,6 +23,7 @@ import com.example.zsocial.backend.common.api.CursorResponse;
 import com.example.zsocial.backend.common.api.ResultCode;
 import com.example.zsocial.backend.common.exception.ApiException;
 import com.example.zsocial.backend.common.exception.Asserts;
+import com.example.zsocial.backend.common.utils.DateTimesUtils;
 import com.example.zsocial.backend.common.utils.PaginationUtils;
 import com.example.zsocial.backend.common.utils.SecurityUtils;
 import com.example.zsocial.backend.infrastructure.filestorage.dto.UploadFileResult;
@@ -50,6 +52,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
@@ -170,6 +173,15 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    @Transactional
+    public void clearConversation(Long conversationId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        ConversationMember member = conversationMemberRepository.findById(new ConversationMemberId(conversationId, userId)).orElseThrow(() -> new ApiException("You are not a member of this conversation"));
+        member.setClearedAt(LocalDateTime.now());
+        conversationMemberRepository.save(member);
+    }
+
+    @Override
     public ConversationMembersResponse getConversationMembers(Long conversationId) {
         Long userId = SecurityUtils.getCurrentUserId();
         if (!isMember(conversationId, userId)) {
@@ -191,10 +203,11 @@ public class ChatServiceImpl implements ChatService {
         }
         Pageable limit = PageRequest.of(0, request.getSize());
         Slice<Message> slice;
+        ConversationMember member = conversationMemberRepository.findById(new ConversationMemberId(request.getConversationId(), userId)).orElseThrow(() -> new ApiException("Member not found"));
         if (request.getLastMessageId() == null) {
-            slice = messageRepository.findLatestMessages(request.getConversationId(), limit);
+            slice = messageRepository.findLatestMessages(request.getConversationId(), member.getEffectiveClearedAt(), limit);
         } else {
-            slice = messageRepository.findOlderMessages(request.getConversationId(), request.getLastMessageId(), limit);
+            slice = messageRepository.findOlderMessages(request.getConversationId(), request.getLastMessageId(), member.getEffectiveClearedAt(), limit);
         }
         List<Long> messageIds = slice.getContent().stream().map(Message::getId).toList();
         List<Object[]> mediasMessage = mediaRepository.findAllByMessageIds(messageIds);
@@ -211,6 +224,19 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public List<Long> getConversationMemberIds(Long conversationId) {
         return conversationMemberRepository.findUserIdsByConversationId(conversationId);
+    }
+
+    @Override
+    public void deleteMessage(Long messageId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        Message message = transactionTemplate.execute(status -> {
+            Message foundMessage = messageRepository.findByIdAndSenderId(messageId, userId).orElseThrow(() -> new ApiException("Message not found"));
+            if (foundMessage.getDeletedAt() != null) {return null;}
+            foundMessage.setDeletedAt(LocalDateTime.now());
+            return messageRepository.save(foundMessage);
+        });
+        if (message == null) {return;}
+        eventPublisher.publishEvent(new MessageRecalledEvent(new MessageRecalledPayload(messageId, message.getConversation().getId())));
     }
 
     private Conversation resolveConversation(Long conversationId, Long receiverId) {

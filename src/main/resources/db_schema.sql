@@ -114,6 +114,7 @@ CREATE TABLE conversation_members (
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     role role_conversation NOT NULL DEFAULT 'MEMBER',
     joined_at TIMESTAMPTZ DEFAULT NOW(),
+    cleared_at TIMESTAMPTZ DEFAULT NULL,
     PRIMARY KEY (conversation_id, user_id)
 );
 
