@@ -59,3 +59,7 @@ zsocial:
 app:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+  task:
+    cleanup:
+      batch-size: ${TASK_CLEANUP_BATCH_SIZE:100}
+      days-to-keep: ${TASK_CLEANUP_DAYS_TO_KEEP:7}
