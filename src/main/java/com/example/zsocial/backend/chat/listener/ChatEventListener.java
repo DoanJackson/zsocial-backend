@@ -1,5 +1,6 @@
 package com.example.zsocial.backend.chat.listener;
 
+import com.example.zsocial.backend.chat.event.MessageRecalledEvent;
 import com.example.zsocial.backend.chat.event.MessageSaveEvent;
 import com.example.zsocial.backend.notification.service.NotificationService;
 
@@ -20,5 +21,11 @@ public class ChatEventListener {
     @EventListener
     public void handleMessageSaved(MessageSaveEvent event) {
         notificationService.handleNewMessageNotification(event.getMessageResponse(), event.getConversationSocketResponse());
+    }
+
+    @Async
+    @EventListener
+    public void handleMessageRecalled(MessageRecalledEvent event) {
+        notificationService.handleMessageRecalledNotification(event.getPayload());
     }
 }

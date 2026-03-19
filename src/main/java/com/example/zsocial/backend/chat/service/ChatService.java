@@ -16,10 +16,14 @@ public interface ChatService {
 
     CursorResponse<ConversationResponse> getConversations(ConversationLoadRequest request);
 
+    void clearConversation(Long conversationId);
+
     ConversationMembersResponse getConversationMembers(Long conversationId);
 
     CursorResponse<MessageResponse> getMessageConversation(MessageLoadRequest request);
 
     List<Long> getConversationMemberIds(Long conversationId);
+
+    void deleteMessage(Long messageId);
 }
 

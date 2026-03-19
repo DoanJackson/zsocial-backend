@@ -27,6 +27,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @Query("SELECT c FROM Conversation c " +
             "JOIN c.members m " +
             "WHERE m.user.id = :userId " +
+            "AND (m.clearedAt IS NULL OR m.clearedAt < c.lastMessageAt) " +
             "ORDER BY c.lastMessageAt DESC, c.id DESC ")
     Slice<Conversation> findFirstPage(Long userId, Pageable pageable);
 
@@ -34,6 +35,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             "JOIN c.members m " +
             "WHERE m.user.id = :userId " +
             "AND (c.lastMessageAt < :lastTime OR (c.lastMessageAt = :lastTime AND c.id < :lastConversationId)) " +
+            "AND (m.clearedAt IS NULL OR m.clearedAt < c.lastMessageAt) " +
             "ORDER BY c.lastMessageAt DESC, c.id DESC ")
     Slice<Conversation> findNextPage(Long userId, LocalDateTime lastTime, Long lastConversationId, Pageable pageable);
 
