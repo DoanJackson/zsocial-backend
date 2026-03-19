@@ -33,3 +33,6 @@ build/
 .vscode/
 gcs-key.json
 .env
+.skill/**
+.agents/**
+.aiexclude/**
